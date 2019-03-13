@@ -43,42 +43,100 @@ To submit your homework:
 
 
 def add(*args):
-    """ Returns a STRING with the sum of the arguments """
+  """ Returns a STRING with the sum of the arguments """
 
-    # TODO: Fill sum with the correct value, based on the
-    # args provided.
-    sum = "0"
+  # TODO: Fill sum with the correct value, based on the
+  # args provided.
 
-    return sum
+  return sum(args)
 
 # TODO: Add functions for handling more arithmetic operations.
 
 def resolve_path(path):
-    """
-    Should return two values: a callable and an iterable of
-    arguments.
-    """
+  """
+  Should return two values: a callable and an iterable of
+  arguments.
+  """
 
-    # TODO: Provide correct values for func and args. The
-    # examples provide the correct *syntax*, but you should
-    # determine the actual values of func and args using the
-    # path.
-    func = add
-    args = ['25', '32']
+  # TODO: Provide correct values for func and args. The
+  # examples provide the correct *syntax*, but you should
+  # determine the actual values of func and args using the
+  # path.
+  # func = add
+  # args = ['25', '32']
 
-    return func, args
+  funcs = {
+    '': home,
+    'add': add,
+    'subtract': subtract,
+    'divide': divide,
+    'multiply': multiply
+  }
+
+  path = path.strip('/').split('/')
+
+  func_name = path[0]
+  args = path[1:]
+
+  try:
+    func = funcs[func_name]
+  except KeyError:
+    raise NameError
+
+  return func, args
+
+
+def home(*args):
+  """ Returns a STRING with the instructions """
+
+  return """
+  This online calculator can perform several operations:<br>
+  <br>
+  * Addition<br>
+  *  Subtractions<br>
+  * Multiplication<br>
+  * Division<br>
+  <br>
+  You can send appropriate requests with the operation and operands,<br>
+  and get back proper responses. For example, if you open a browser to the wsgi<br>
+  application at `http://localhost:8080/add/3/5' then the response<br>
+  body in the browser should be `8`.)
+  """
+
 
 def application(environ, start_response):
-    # TODO: Your application code from the book database
-    # work here as well! Remember that your application must
-    # invoke start_response(status, headers) and also return
-    # the body of the response in BYTE encoding.
-    #
-    # TODO (bonus): Add error handling for a user attempting
-    # to divide by zero.
-    pass
+  # TODO: Your application code from the book database
+  # work here as well! Remember that your application must
+  # invoke start_response(status, headers) and also return
+  # the body of the response in BYTE encoding.
+  #
+  # TODO (bonus): Add error handling for a user attempting
+  # to divide by zero.
+  headers = [('Content-type', 'text/html')]
+  try:
+    path = environ.get('PATH_INFO', None)
+    if path is None:
+      raise NameError
+    func ,args = resolve_path(path)
+    body = func(*args)
+    status = "200 OK"
+  except NameError:
+    status = '404 Not Found'
+    body = "<h1>Not Found</h1>"
+  except Exception:
+    status = "500 Internal Server Error"
+    body = "<h1>Internal Server Error</h1>"
+    print(traceback.format_exc())
+  finally:
+    headers.append(('Content-length', str(len(body))))
+    start_response(status, headers)
+    return [body.encode('utf8')]
+
 
 if __name__ == '__main__':
-    # TODO: Insert the same boilerplate wsgiref simple
-    # server creation that you used in the book database.
-    pass
+  # TODO: Insert the same boilerplate wsgiref simple
+  # server creation that you used in the book database.
+
+  from wsgiref.simple_server import make_server
+  srv = make_server('localhost', 8080, application)
+  srv.serve_forever()
