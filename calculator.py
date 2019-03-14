@@ -41,16 +41,71 @@ To submit your homework:
 
 """
 
+def home(*args):
+  """ Returns a STRING with the instructions """
+
+  return """
+  This online calculator can perform several operations:<br>
+  <br>
+  * Addition<br>
+  *  Subtractions<br>
+  * Multiplication<br>
+  * Division<br>
+  <br>
+  You can send appropriate requests with the operation and operands,<br>
+  and get back proper responses. For example, if you open a browser to the wsgi<br>
+  application at `http://localhost:8080/add/3/5' then the response<br>
+  body in the browser should be `8`.)
+  """
+
 
 def add(*args):
   """ Returns a STRING with the sum of the arguments """
 
   # TODO: Fill sum with the correct value, based on the
   # args provided.
+  return 'The answer is {}'.format(str(sum(args)))
 
-  return sum(args)
+
 
 # TODO: Add functions for handling more arithmetic operations.
+
+def subtract(*args):
+  return 'The answer is {}'.format(str(args[0] - args[1]))
+
+
+def multiply(*args):
+  return 'The answer is {}'.format(str(args[0] * args[1]))
+
+
+def divide(*args):
+  try: 
+    return 'The answer is {}'.format(str(args[0] / args[1]))
+  except ZeroDivisionError:
+    return 'Zero Division Error: Cannot divide the number by 0.'
+
+
+
+def home():
+    body = """
+    <h1>Calculator Instruction</h1>
+    Perform the calculation by inserting one of the following:
+    <ul>
+    <li>add</li>
+    <li>subtract</li>
+    <li>multiply</li>
+    <li>divide</li>
+    </ul>
+    in the address bar followed by two numbers you want to do the calculation.<br>
+    <br>
+    For example:<br>
+    localhost:8080/add/4/5<br>
+    <br>
+    You will get a returned answer (9) on the page.
+    """
+
+    return body
+
 
 def resolve_path(path):
   """
@@ -76,32 +131,18 @@ def resolve_path(path):
   path = path.strip('/').split('/')
 
   func_name = path[0]
-  args = path[1:]
+  # args = path[1:]
+  args = [float(x) for x in path[1:]]
 
   try:
     func = funcs[func_name]
-  except KeyError:
+  except (KeyError, ValueError):
     raise NameError
 
   return func, args
 
 
-def home(*args):
-  """ Returns a STRING with the instructions """
 
-  return """
-  This online calculator can perform several operations:<br>
-  <br>
-  * Addition<br>
-  *  Subtractions<br>
-  * Multiplication<br>
-  * Division<br>
-  <br>
-  You can send appropriate requests with the operation and operands,<br>
-  and get back proper responses. For example, if you open a browser to the wsgi<br>
-  application at `http://localhost:8080/add/3/5' then the response<br>
-  body in the browser should be `8`.)
-  """
 
 
 def application(environ, start_response):
@@ -112,25 +153,28 @@ def application(environ, start_response):
   #
   # TODO (bonus): Add error handling for a user attempting
   # to divide by zero.
+
   headers = [('Content-type', 'text/html')]
+  body = '<a href="/"">Calculator Instruction Page</a>'
   try:
     path = environ.get('PATH_INFO', None)
     if path is None:
       raise NameError
     func ,args = resolve_path(path)
-    body = func(*args)
+    body += "<h1>" + func(*args) + "</h1>"
     status = "200 OK"
   except NameError:
     status = '404 Not Found'
-    body = "<h1>Not Found</h1>"
+    body += "<h1>Not Found</h1>"
   except Exception:
     status = "500 Internal Server Error"
-    body = "<h1>Internal Server Error</h1>"
+    body += "<h1>Internal Server Error</h1>"
     print(traceback.format_exc())
   finally:
     headers.append(('Content-length', str(len(body))))
     start_response(status, headers)
     return [body.encode('utf8')]
+
 
 
 if __name__ == '__main__':
